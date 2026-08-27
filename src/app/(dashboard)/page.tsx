@@ -1,0 +1,71 @@
+'use client';
+
+import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { StatCard } from '@/components/analytics/stat-card';
+import { TenderList } from '@/components/tenders/tender-list';
+import { useTenderStats, useTenders } from '@/lib/hooks/use-tenders';
+import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils/format';
+import { FileText, Loader, ClipboardCheck, TrendingUp, Target, Banknote, Plus, ArrowRight } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const { data: stats, isLoading: statsLoading } = useTenderStats();
+  const { data: recentTenders, isLoading: tendersLoading } = useTenders({ per_page: 5, sort_by: 'created_at', sort_order: 'desc' });
+
+  const statCards = useMemo(() => {
+    if (!stats) return [];
+    return [
+      { title: 'Всего тендеров', value: formatNumber(stats.total), icon: FileText, trend: stats.trend_total, description: 'За все время' },
+      { title: 'В обработке', value: formatNumber(stats.in_progress_count), icon: Loader, trend: stats.trend_in_progress, description: 'Активные тендеры' },
+      { title: 'Готовы к решению', value: formatNumber(stats.ready_for_decision_count), icon: ClipboardCheck, trend: stats.trend_ready, description: 'Ожидают решения' },
+      { title: 'Средняя маржа', value: formatPercent(stats.avg_margin_percent), icon: TrendingUp, trend: stats.trend_margin, description: 'По одобренным' },
+      { title: 'Конверсия', value: formatPercent(stats.approval_rate_percent), icon: Target, trend: stats.trend_conversion, description: 'Одобренных' },
+      { title: 'Объем одобренных', value: formatCurrency(stats.total_approved_volume_rub), icon: Banknote, trend: stats.trend_volume, description: 'Общая сумма' },
+    ];
+  }, [stats]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Дашборд</h1>
+          <p className="text-neutral-500 mt-1">Обзор системы тендерного конвейера</p>
+        </div>
+        <Button onClick={() => router.push('/tenders/create')}>
+          <Plus className="h-4 w-4 mr-2" /> Новый тендер
+        </Button>
+      </div>
+
+      {statsLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-28" />)}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          {statCards.map((stat) => (
+            <StatCard key={stat.title} {...stat} />
+          ))}
+        </div>
+      )}
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Последние тендеры</CardTitle>
+            <CardDescription>Недавно добавленные</CardDescription>
+          </div>
+          <Button variant="ghost" onClick={() => router.push('/tenders')}>
+            Все тендеры <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <TenderList tenders={recentTenders?.data || []} loading={tendersLoading} compact />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
