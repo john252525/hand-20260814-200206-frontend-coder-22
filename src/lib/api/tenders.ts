@@ -36,10 +36,6 @@ export async function fetchTenderStats(): Promise<APIResponse<TenderStats>> {
   return response.data;
 }
 
-export async function searchSuppliersForTender(tenderId: string, maxSuppliers?: number): Promise<void> {
-  await apiClient.post(`/api/v1/tenders/${tenderId}/search-suppliers`, { max_suppliers: maxSuppliers });
-}
-
 export async function confirmSupplierSearch(tenderId: string, payload: any): Promise<void> {
   await apiClient.post(`/api/v1/tenders/${tenderId}/supplier-search-results/confirm`, payload);
 }

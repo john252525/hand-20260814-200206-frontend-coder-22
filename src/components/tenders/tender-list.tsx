@@ -1,19 +1,22 @@
+'use client';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tender } from '@/lib/types/tender';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
-import { Users, ArrowRight } from 'lucide-react';
+import { Users, ArrowRight, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
 
 interface TenderListProps {
   tenders: Tender[];
   loading?: boolean;
+  error?: Error | null;
   compact?: boolean;
 }
 
-export function TenderList({ tenders, loading, compact = false }: TenderListProps) {
+export function TenderList({ tenders, loading, error, compact = false }: TenderListProps) {
   const router = useRouter();
 
   if (loading) {
@@ -22,6 +25,15 @@ export function TenderList({ tenders, loading, compact = false }: TenderListProp
         {Array.from({ length: 5 }).map((_, i) => (
           <Skeleton key={i} className="h-16" />
         ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8 text-red-500">
+        <AlertTriangle className="h-12 w-12 mx-auto mb-2" />
+        <p>{error.message || 'Ошибка загрузки'}</p>
       </div>
     );
   }

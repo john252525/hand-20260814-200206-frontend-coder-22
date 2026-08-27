@@ -7,6 +7,11 @@ import { useAuthStore } from '@/lib/stores/auth-store';
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const token = useAuthStore((state) => state.token);
+  const syncFromCookie = useAuthStore((state) => state.syncFromCookie);
+
+  useEffect(() => {
+    syncFromCookie();
+  }, [syncFromCookie]);
 
   useEffect(() => {
     if (!token) {

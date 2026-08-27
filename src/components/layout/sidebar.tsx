@@ -5,20 +5,10 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
 import { navigation } from '@/config/navigation';
 import {
-  LayoutDashboard,
-  FileText,
-  Users,
-  MessageSquare,
-  FileCheck,
-  Handshake,
-  ClipboardCheck,
-  BarChart3,
-  Settings,
-  Shield,
-  Files,
-  ListTodo,
+  LayoutDashboard, FileText, Users, MessageSquare, FileCheck, Handshake, ClipboardCheck, BarChart3, Settings, Shield, Files, ListTodo,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { UserMenu } from '@/components/layout/user-menu';
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -59,9 +49,7 @@ export function Sidebar() {
                   href={item.href}
                   className={cn(
                     'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-neutral-600 hover:bg-neutral-100'
+                    isActive ? 'bg-primary-50 text-primary-700' : 'text-neutral-600 hover:bg-neutral-100'
                   )}
                 >
                   <Icon className="h-5 w-5" />
@@ -73,6 +61,9 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
+      <div className="p-4 border-t border-neutral-200">
+        <UserMenu />
+      </div>
     </aside>
   );
 }

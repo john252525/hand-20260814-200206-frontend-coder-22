@@ -16,6 +16,12 @@ interface AuthState {
   login: (data: { email: string; password: string; rememberMe?: boolean }) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  syncFromCookie: () => void;
+}
+
+function getCookie(name: string): string | undefined {
+  const match = document.cookie.match(new RegExp('(^|; )' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[2]) : undefined;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -30,8 +36,8 @@ export const useAuthStore = create<AuthState>()(
           const response = await apiClient.post('/api/v1/auth/login', data);
           const { user, token } = response.data.data;
           set({ user, token, isLoading: false });
-          // Set cookie for middleware
-          document.cookie = `token=${token}; path=/; max-age=3600`;
+          const maxAge = data.rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24;
+          document.cookie = `token=${token}; path=/; max-age=${maxAge}`;
         } catch (error) {
           set({ isLoading: false });
           throw error;
@@ -52,6 +58,12 @@ export const useAuthStore = create<AuthState>()(
         } catch {
           set({ user: null, token: null });
           document.cookie = 'token=; path=/; max-age=0';
+        }
+      },
+      syncFromCookie: () => {
+        const cookieToken = getCookie('token');
+        if (cookieToken && !get().token) {
+          set({ token: cookieToken });
         }
       },
     }),

@@ -8,7 +8,7 @@ import { DataTable } from '@/components/shared/data-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { TenderFilters } from '@/components/tenders/tender-filters';
 import { useTenders } from '@/lib/hooks/use-tenders';
-import { TenderFilters as TenderFiltersType } from '@/lib/types/tender';
+import { Tender, TenderFilters as TenderFiltersType } from '@/lib/types/tender';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
 import { Plus } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
@@ -16,9 +16,13 @@ import { ColumnDef } from '@tanstack/react-table';
 export default function TendersPage() {
   const router = useRouter();
   const [filters, setFilters] = useState<TenderFiltersType>({});
-  const { data: tenders, isLoading, error, refetch } = useTenders(filters);
+  const [page, setPage] = useState(1);
+  const { data, isLoading, error, refetch } = useTenders({ ...filters, page, per_page: 20 });
 
-  const columns = useMemo<ColumnDef<Tender, any>[]>(() => [
+  const tenders = data?.data || [];
+  const meta = data?.meta;
+
+  const columns = useMemo<ColumnDef<Tender, unknown>[]>(() => [
     {
       accessorKey: 'title',
       header: 'Название',
@@ -56,7 +60,7 @@ export default function TendersPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-semibold">Тендеры</h1>
-          <p className="text-neutral-500 mt-1">Всего: {tenders?.length ?? 0}</p>
+          <p className="text-neutral-500 mt-1">Всего: {meta?.total ?? 0}</p>
         </div>
         <Button onClick={() => router.push('/tenders/create')}>
           <Plus className="h-4 w-4 mr-2" /> Создать
@@ -65,19 +69,21 @@ export default function TendersPage() {
 
       <TenderFilters
         filters={filters}
-        onChange={setFilters}
-        onReset={() => setFilters({})}
+        onChange={(newFilters) => { setFilters(newFilters); setPage(1); }}
+        onReset={() => { setFilters({}); setPage(1); }}
       />
 
       <Card>
         <CardContent className="p-0">
           <DataTable
             columns={columns}
-            data={tenders || []}
+            data={tenders}
             loading={isLoading}
             error={error as Error}
             onRetry={refetch}
             onRowClick={(row) => router.push(`/tenders/${row.id}`)}
+            pagination={meta ? { page: meta.page, perPage: meta.per_page, total: meta.total, pages: meta.pages } : undefined}
+            onPageChange={setPage}
             emptyState={{ title: 'Нет тендеров', description: 'Создайте первый тендер' }}
           />
         </CardContent>

@@ -1,5 +1,3 @@
-'use client';
-
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,11 +8,15 @@ import { useTenderStats, useTenders } from '@/lib/hooks/use-tenders';
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils/format';
 import { FileText, Loader, ClipboardCheck, TrendingUp, Target, Banknote, Plus, ArrowRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
+
+const COLORS = ['#0284c7', '#f59e0b', '#22c55e', '#ef4444', '#8b5cf6', '#64748b'];
 
 export default function DashboardPage() {
   const router = useRouter();
   const { data: stats, isLoading: statsLoading } = useTenderStats();
-  const { data: recentTenders, isLoading: tendersLoading } = useTenders({ per_page: 5, sort_by: 'created_at', sort_order: 'desc' });
+  const { data: recentTendersData, isLoading: tendersLoading } = useTenders({ per_page: 5, sort_by: 'created_at', sort_order: 'desc' });
+  const recentTenders = recentTendersData?.data || [];
 
   const statCards = useMemo(() => {
     if (!stats) return [];
@@ -28,16 +30,17 @@ export default function DashboardPage() {
     ];
   }, [stats]);
 
+  const pieData = useMemo(() => stats ? Object.entries(stats.by_status || {}).map(([name, value]) => ({ name, value })) : [], [stats]);
+  const lineData = useMemo(() => stats?.over_time || [], [stats]);
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-semibold">Дашборд</h1>
-          <p className="text-neutral-500 mt-1">Обзор системы тендерного конвейера</p>
+          <p className="text-neutral-500 mt-1">Обзор системы</p>
         </div>
-        <Button onClick={() => router.push('/tenders/create')}>
-          <Plus className="h-4 w-4 mr-2" /> Новый тендер
-        </Button>
+        <Button onClick={() => router.push('/tenders/create')}><Plus className="h-4 w-4 mr-2" /> Новый тендер</Button>
       </div>
 
       {statsLoading ? (
@@ -46,24 +49,62 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          {statCards.map((stat) => (
-            <StatCard key={stat.title} {...stat} />
-          ))}
+          {statCards.map((stat) => <StatCard key={stat.title} {...stat} />)}
         </div>
       )}
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Тендеры по статусам</CardTitle>
+            <CardDescription>Распределение</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            {pieData.length ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                    {pieData.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : <div className="text-center text-neutral-400 pt-20">Нет данных</div>}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Динамика за 30 дней</CardTitle>
+            <CardDescription>Новые тендеры</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            {lineData.length ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={lineData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="count" stroke="#0284c7" />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : <div className="text-center text-neutral-400 pt-20">Нет данных</div>}
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex justify-between items-center">
           <div>
             <CardTitle>Последние тендеры</CardTitle>
             <CardDescription>Недавно добавленные</CardDescription>
           </div>
-          <Button variant="ghost" onClick={() => router.push('/tenders')}>
-            Все тендеры <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
+          <Button variant="ghost" onClick={() => router.push('/tenders')}>Все тендеры <ArrowRight className="h-4 w-4 ml-2" /></Button>
         </CardHeader>
         <CardContent>
-          <TenderList tenders={recentTenders?.data || []} loading={tendersLoading} compact />
+          <TenderList tenders={recentTenders} loading={tendersLoading} compact />
         </CardContent>
       </Card>
     </div>

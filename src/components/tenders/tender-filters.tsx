@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TENDER_STATUS_CONFIG } from '@/config/constants';
 import { TenderFilters as TenderFiltersType } from '@/lib/types/tender';
 import { Filter, X, Search } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
 
 interface TenderFiltersProps {
   filters: TenderFiltersType;
@@ -25,7 +24,7 @@ export function TenderFilters({ filters, onChange, onReset }: TenderFiltersProps
     onChange({ ...filters, [key]: value });
   };
 
-  const statusKeys = useMemo(() => Object.keys(TENDER_STATUS_CONFIG), []);
+  const statusKeys = Object.keys(TENDER_STATUS_CONFIG);
 
   return (
     <div className="space-y-2">
@@ -35,7 +34,7 @@ export function TenderFilters({ filters, onChange, onReset }: TenderFiltersProps
           <Input
             value={filters.search || ''}
             onChange={(e) => handleChange('search', e.target.value)}
-            placeholder="Поиск по названию..."
+            placeholder="Поиск по названию, заказчику..."
             className="pl-9"
           />
         </div>
@@ -52,7 +51,7 @@ export function TenderFilters({ filters, onChange, onReset }: TenderFiltersProps
       </div>
 
       {isOpen && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-white rounded-lg border">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-white rounded-lg border">
           <div className="space-y-2">
             <Label>Статус</Label>
             <Select
@@ -75,6 +74,22 @@ export function TenderFilters({ filters, onChange, onReset }: TenderFiltersProps
           <div className="space-y-2">
             <Label>НМЦК до</Label>
             <Input type="number" value={filters.nmck_max || ''} onChange={(e) => handleChange('nmck_max', e.target.value ? Number(e.target.value) : undefined)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Дедлайн после</Label>
+            <Input type="date" value={filters.deadline_after?.slice(0,10) || ''} onChange={(e) => handleChange('deadline_after', e.target.value ? new Date(e.target.value).toISOString() : undefined)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Дедлайн до</Label>
+            <Input type="date" value={filters.deadline_before?.slice(0,10) || ''} onChange={(e) => handleChange('deadline_before', e.target.value ? new Date(e.target.value).toISOString() : undefined)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Скор от</Label>
+            <Input type="number" min={0} max={100} value={filters.score_min || ''} onChange={(e) => handleChange('score_min', e.target.value ? Number(e.target.value) : undefined)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Скор до</Label>
+            <Input type="number" min={0} max={100} value={filters.score_max || ''} onChange={(e) => handleChange('score_max', e.target.value ? Number(e.target.value) : undefined)} />
           </div>
         </div>
       )}
