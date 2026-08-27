@@ -2,12 +2,12 @@
 
 import { useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/shared/data-table';
-import { useDecisions, useApproveTender, useRejectTender, useRequestInfo } from '@/lib/hooks/use-decisions';
+import { useDecisions } from '@/lib/hooks/use-decisions';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Decision } from '@/lib/types/decision';
 import { Badge } from '@/components/ui/badge';
+import { DecisionActions } from '@/components/decisions/decision-actions';
 
 export default function DecisionsPage() {
   const [page, setPage] = useState(1);
@@ -15,58 +15,13 @@ export default function DecisionsPage() {
   const decisions = data?.data || [];
   const meta = data?.meta;
 
-  const approveMutation = useApproveTender();
-  const rejectMutation = useRejectTender();
-  const requestInfoMutation = useRequestInfo();
-
-  const columns = useMemo<ColumnDef<Decision, any>[]>(() => [
+  const columns = useMemo<ColumnDef<Decision, unknown>[]>(() => [
     { accessorKey: 'tender_title', header: 'Тендер' },
     { accessorKey: 'best_supplier_name', header: 'Поставщик' },
     { accessorKey: 'risk_level', header: 'Риск', cell: ({ row }) => row.original.risk_level ? <Badge variant={row.original.risk_level === 'HIGH' ? 'danger' : row.original.risk_level === 'MEDIUM' ? 'warning' : 'success'}>{row.original.risk_level}</Badge> : '—' },
     { accessorKey: 'auto_recommendation', header: 'Рекомендация' },
-    {
-      id: 'actions',
-      header: 'Действия',
-      cell: ({ row }) => (
-        <div className="flex gap-1">
-          <Button
-            size="sm"
-            variant="success"
-            onClick={() => {
-              const offerId = window.prompt('ID КП');
-              const supplierId = window.prompt('ID поставщика');
-              if (offerId && supplierId) {
-                approveMutation.mutate({ tenderId: row.original.tender_id, payload: { chosen_offer_id: offerId, chosen_supplier_id: supplierId } });
-              }
-            }}
-          >
-            Одобрить
-          </Button>
-          <Button
-            size="sm"
-            variant="danger"
-            onClick={() => {
-              const reason = window.prompt('Причина отклонения') || '';
-              const comment = window.prompt('Комментарий') || '';
-              rejectMutation.mutate({ tenderId: row.original.tender_id, payload: { reason, comment } });
-            }}
-          >
-            Отклонить
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              const instructions = window.prompt('Инструкции') || '';
-              requestInfoMutation.mutate({ tenderId: row.original.tender_id, payload: { instructions } });
-            }}
-          >
-            Инфо
-          </Button>
-        </div>
-      ),
-    },
-  ], [approveMutation, rejectMutation, requestInfoMutation]);
+    { id: 'actions', header: 'Действия', cell: ({ row }) => <DecisionActions decision={row.original} /> },
+  ], []);
 
   return (
     <div className="space-y-6">
