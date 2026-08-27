@@ -4,9 +4,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
+} from '@/components/ui/alert-dialog';
 import { useSupplier, useDeleteSupplier } from '@/lib/hooks/use-suppliers';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
-import { ArrowLeft, Pencil, Trash, Mail, Phone, Globe } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash, Mail, Phone, Globe, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function SupplierDetailPage() {
@@ -16,15 +19,13 @@ export default function SupplierDetailPage() {
   const { data: supplier, isLoading, error } = useSupplier(supplierId);
   const deleteSupplier = useDeleteSupplier();
 
+  const handleDelete = () => {
+    deleteSupplier.mutate(supplierId, { onSuccess: () => router.push('/suppliers') });
+  };
+
   if (isLoading) return <div className="space-y-4"><Skeleton className="h-8" /><Skeleton className="h-32" /></div>;
   if (error) return <div className="text-center py-12 text-red-500">{error.message}</div>;
   if (!supplier) return null;
-
-  const handleDelete = () => {
-    if (confirm('Удалить поставщика?')) {
-      deleteSupplier.mutate(supplierId, { onSuccess: () => router.push('/suppliers') });
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -38,7 +39,23 @@ export default function SupplierDetailPage() {
         </div>
         <div className="flex gap-2">
           <Link href={`/suppliers/${supplierId}/edit`}><Button variant="outline"><Pencil className="h-4 w-4 mr-2" />Редактировать</Button></Link>
-          <Button variant="danger" onClick={handleDelete}><Trash className="h-4 w-4 mr-2" />Удалить</Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="danger"><Trash className="h-4 w-4 mr-2" />Удалить</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Удалить поставщика?</AlertDialogTitle>
+                <AlertDialogDescription>Это действие нельзя отменить. Поставщик будет удалён навсегда.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Отмена</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+                  {deleteSupplier.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Удаление...</> : 'Удалить'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 

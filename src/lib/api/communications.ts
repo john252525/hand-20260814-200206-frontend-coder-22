@@ -23,24 +23,25 @@ export interface Message {
   created_at: string;
 }
 
-// Временно используем моки, так как в Swagger нет /threads
-// TODO: заменить на реальный серверный эндпоинт.
+const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === 'true';
+
 export async function fetchThreads(params: {
   search?: string;
   filter?: string;
   page?: number;
   per_page?: number;
 } = {}): Promise<APIResponse<Thread[]>> {
-  await apiClient.get('/api/v1/health'); // для проверки сети, необязательно
-  let data = mockThreads as unknown as Thread[];
-  if (params.search) {
-    const q = params.search.toLowerCase();
-    data = data.filter(t => t.supplier_name.toLowerCase().includes(q) || t.tender_title.toLowerCase().includes(q));
+  if (USE_MOCKS) {
+    let data = mockThreads as unknown as Thread[];
+    if (params.search) {
+      const q = params.search.toLowerCase();
+      data = data.filter(t => t.supplier_name.toLowerCase().includes(q) || t.tender_title.toLowerCase().includes(q));
+    }
+    return { data, meta: { page: 1, per_page: data.length, total: data.length, pages: 1 } };
   }
-  return {
-    data,
-    meta: { page: 1, per_page: data.length, total: data.length, pages: 1 },
-  };
+  // TODO: заменить на реальный эндпоинт /threads, когда он появится на бэкенде
+  const response = await apiClient.get('/api/v1/communications/threads', { params });
+  return response.data;
 }
 
 export async function fetchMessagesByTender(tenderId: string): Promise<APIResponse<Message[]>> {

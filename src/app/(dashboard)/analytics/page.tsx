@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/analytics/stat-card';
 import { useTenderStats } from '@/lib/hooks/use-tenders';
 import { formatCurrency, formatPercent } from '@/lib/utils/format';
-import { Download, FileSpreadsheet, FileText, File as FileCsv } from 'lucide-react';
+import { downloadFile } from '@/lib/utils/export';
+import { FileSpreadsheet, FileText, File as FileCsv } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 const COLORS = ['#0284c7', '#f59e0b', '#22c55e', '#ef4444', '#8b5cf6', '#64748b'];
@@ -18,7 +19,21 @@ export default function AnalyticsPage() {
   const lineData = useMemo(() => stats?.over_time || [], [stats]);
 
   const handleExport = (format: 'excel' | 'pdf' | 'csv') => {
-    // TODO: реализовать экспорт через utils
+    if (!stats) return;
+    const rows = [
+      { metric: 'Всего тендеров', value: stats.total },
+      { metric: 'Конверсия', value: stats.approval_rate_percent },
+      { metric: 'Средняя маржа', value: stats.avg_margin_percent },
+      { metric: 'Объем одобренных', value: stats.total_approved_volume_rub },
+    ];
+    const filename = `analytics-${new Date().toISOString().slice(0,10)}`;
+    if (format === 'excel') {
+      import('@/lib/utils/export').then(({ exportToExcel }) => exportToExcel(rows, filename));
+    } else if (format === 'csv') {
+      import('@/lib/utils/export').then(({ exportToCSV }) => exportToCSV(rows, filename));
+    } else if (format === 'pdf') {
+      import('@/lib/utils/export').then(({ exportToPDF }) => exportToPDF(rows, filename, 'Аналитика', ['metric', 'value']));
+    }
   };
 
   if (isLoading) return <div>Загрузка...</div>;

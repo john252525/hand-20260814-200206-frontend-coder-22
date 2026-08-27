@@ -12,13 +12,17 @@ export interface FileRecord {
   entity_id?: string;
 }
 
-// В Swagger нет GET /files, поэтому используем мок-данные
+const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === 'true';
+
 export async function fetchFiles(entityType?: string, entityId?: string): Promise<APIResponse<FileRecord[]>> {
-  await apiClient.get('/api/v1/health'); // для проверки сети
-  let files = mockFiles as unknown as FileRecord[];
-  if (entityType) files = files.filter(f => f.entity_type === entityType);
-  if (entityId) files = files.filter(f => f.entity_id === entityId);
-  return { data: files, meta: { page: 1, per_page: files.length, total: files.length, pages: 1 } };
+  if (USE_MOCKS) {
+    let files = mockFiles as unknown as FileRecord[];
+    if (entityType) files = files.filter(f => f.entity_type === entityType);
+    if (entityId) files = files.filter(f => f.entity_id === entityId);
+    return { data: files, meta: { page: 1, per_page: files.length, total: files.length, pages: 1 } };
+  }
+  const response = await apiClient.get('/api/v1/files', { params: { entity_type: entityType, entity_id: entityId } });
+  return response.data;
 }
 
 export async function uploadFile(file: File, entityType: string = 'tender', entityId?: string): Promise<APIResponse<FileRecord>> {
